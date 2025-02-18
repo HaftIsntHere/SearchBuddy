@@ -12,4 +12,4 @@ An extension that enhances your search experience by providing instant previews 
 - Port to FireFox
 - Customize preview window
 
--# made for [HackClub](https://hackclub.com) [BrowserBuddy](https://browserbuddy.hackclub.com) event
+<sub> made for [HackClub](https://hackclub.com) [BrowserBuddy](https://browserbuddy.hackclub.com) event </sub>
