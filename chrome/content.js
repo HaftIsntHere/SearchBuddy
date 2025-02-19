@@ -1,21 +1,54 @@
 let mouseInIframe = false;
+let mouseInSave = false;
 /**
  *
  * @param {MouseEvent} e
  */
-function showPreview(e) {
-  "d".slice(0, "d".lastIndexOf("e"))
+async function showPreview(e) {
   let title = e.currentTarget.innerText ?? e.currentTarget.href;
+  let currentTarget = e.currentTarget;
   // Remove any existing iframe first
   removePreview();
+
+  let shouldReturn = false;
+  await chrome.runtime.sendMessage({ action: "getSettings" }).then((data) => {
+    const listMode = data.settings.listMode ?? "blacklist";
+    const list = data.settings.list ?? [];
+
+    const currentPageURL = window.location.href;
+
+    if (
+      listMode === "blacklist" &&
+      list.some((x) => currentPageURL.includes(x))
+    )
+      shouldReturn = true;
+    else if (
+      listMode === "whitelist" &&
+      !list.some((x) => currentPageURL.includes(x))
+    )
+      shouldReturn = true;
+
+    // ^ This is to check if the current page is in the list
+
+    // chrome.runtime.sendMessage({ action: "log", log: shouldReturn });
+    // chrome.runtime.sendMessage({ action: "log", log: currentPageURL });
+    // chrome.runtime.sendMessage({ action: "log", log: list });
+    // chrome.runtime.sendMessage({
+    //   action: "log",
+    //   log: list.some((x) => currentPageURL.includes(x)),
+    // });
+  });
+  if (shouldReturn) return;
+
   if (mouseInIframe) mouseInIframe = false;
-  // chrome.runtime.sendMessage({ action: "log", log: e.currentTarget.href });
+  if (mouseInSave) mouseInSave = false;
+  // chrome.runtime.sendMessage({ action: "log", log: currentTarget.href });
   // Create the iframe
   const container = document.createElement("div");
   container.classList.add("preview-container");
 
   const iframe = document.createElement("iframe");
-  iframe.src = e.currentTarget.href;
+  iframe.src = currentTarget.href;
 
   iframe.onerror = () => {
     chrome.runtime.sendMessage({ action: "log", log: "iframe error" });
@@ -85,33 +118,51 @@ function showPreview(e) {
   // };
   // ^ Doesn't work, CORS is preventing :(
 
-  let mouseInSave = false;
+  // function setMouseInSave(state) {mouseInSave = state}
 
-  saveBadge.addEventListener("mouseenter", () => (mouseInSave = true));
-  saveBadge.addEventListener("mouseleave", () => (mouseInSave = false)); 
+  saveBadge.addEventListener("mouseenter", () => {
+    mouseInSave = true;
+    chrome.runtime.sendMessage({ action: "log", log: mouseInSave });
+  });
+  saveBadge.addEventListener("mouseleave", () => {
+    mouseInSave = false;
+    chrome.runtime.sendMessage({ action: "log", log: mouseInSave });
+  });
 
   saveBadge.addEventListener("click", async () => {
-    const settings = await chrome.runtime.sendMessage({ action: "getSettings" });
-    if(!settings.history) settings.history = []
-    settings.history.unshift({link: document.querySelector("iframe.preview").src, title: title.length < 1 ? document.querySelector("iframe.preview").src : !title.includes("http") ? title : title.slice(0, title.lastIndexOf("http"))}); // save button thingy
+    const settings = await chrome.runtime.sendMessage({
+      action: "getSettings",
+    });
+    if (!settings.history) settings.history = [];
+    settings.history.unshift({
+      link: document.querySelector("iframe.preview").src,
+      title:
+        title.length < 1
+          ? document.querySelector("iframe.preview").src
+          : !title.includes("http")
+          ? title
+          : title.slice(0, title.lastIndexOf("http")),
+    }); // save button thingy
     chrome.runtime.sendMessage({ action: "saveSettings", settings });
     saveBadge.style.transform = "scale(1.2)";
     setTimeout(() => {
       saveBadge.style.transform = "scale(1)";
     }, 100);
-  }
-)
+  });
 
   let timeout;
   iframe.addEventListener("mouseleave", () => {
-    if(mouseInSave) return; // prevent closing when hovering over save badge
-    iframe.style.transition = "opacity 0.5s ease-in-out";
-    setTimeout(() => {
-      if (timeout) iframe.style.opacity = "0";
-    }, 1000);
-    timeout = setTimeout(() => {
-      removePreview();
-    }, 2000);
+    chrome.runtime.sendMessage({ action: "log", log: mouseInSave });
+    if (!mouseInSave) {
+      // prevent closing when hovering over save badge
+      iframe.style.transition = "opacity 0.5s ease-in-out";
+      setTimeout(() => {
+        if (timeout) iframe.style.opacity = "0";
+      }, 1000);
+      timeout = setTimeout(() => {
+        removePreview();
+      }, 2000);
+    }
   });
 
   iframe.addEventListener("mouseenter", () => {
@@ -123,7 +174,7 @@ function showPreview(e) {
     timeout = null;
   });
 
-  e.currentTarget.addEventListener("mouseleave", () => {
+  currentTarget.addEventListener("mouseleave", () => {
     // chrome.runtime.sendMessage({ action: "log", log: mouseInIframe });
     setTimeout(() => {
       if (!mouseInIframe) removePreview();

@@ -1,5 +1,5 @@
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({ settings: {} });
+  chrome.storage.sync.set({ settings: {list: []}, history: [] });
 });
 
 chrome.runtime.onMessage.addListener(
