@@ -101,12 +101,15 @@ function mainPage(shouldDisplayHistory = true, pos = null) {
   createFolder.onclick = () => {
     const folderName = prompt("Enter folder name:");
     if (folderName) {
+      // console.log("there is folder name")
       chrome.runtime.sendMessage({ action: "getSettings" }).then((data) => {
         const history = data.history ?? [];
         if (pos) {
           console.log(pos);
           console.log(history);
           setDeepValue(history, pos, { title: folderName, items: [] });
+        } else {
+          history.push({ title: folderName, items: [] });
         }
         chrome.runtime.sendMessage({
           action: "saveSettings",
@@ -120,16 +123,16 @@ function mainPage(shouldDisplayHistory = true, pos = null) {
         displayHistory(pos);
       });
     }
-
-    function setDeepValue(obj, path, value) {
-      let current = obj;
-      for (let i = 0; i <= path.length - 1; i++) {
-        if (i != 0) current = current.items[path[i]];
-        else current = current[path[i]];
-      }
-      current.items.push(value);
-    }
   };
+}
+
+function setDeepValue(obj, path, value) {
+  let current = obj;
+  for (let i = 0; i <= path.length - 1; i++) {
+    if (i != 0) current = current.items[path[i]];
+    else current = current[path[i]];
+  }
+  current.items.push(value);
 }
 
 function displayHistory(pos = null) {
@@ -179,70 +182,80 @@ function displayHistory(pos = null) {
       deleteButton.style.cursor = "pointer";
       link.appendChild(deleteButton);
 
-      if (url.link) {
-        const moveButton = document.createElement("button");
-        moveButton.style.position = "absolute";
-        moveButton.style.right = "-45px";
-        moveButton.style.top = "0px";
-        moveButton.innerText = ">>";
-        moveButton.style.backgroundColor = "#F7DC6F";
-        moveButton.style.border = "none";
-        moveButton.style.borderRadius = "10px";
-        moveButton.style.height = "40px";
-        moveButton.style.width = "35px";
-        moveButton.style.cursor = "pointer";
-        link.appendChild(moveButton);
+      // if (url.link) {
+      const moveButton = document.createElement("button");
+      moveButton.style.position = "absolute";
+      moveButton.style.right = "-45px";
+      moveButton.style.top = "0px";
+      moveButton.innerText = ">>";
+      moveButton.style.backgroundColor = "#F7DC6F";
+      moveButton.style.border = "none";
+      moveButton.style.borderRadius = "10px";
+      moveButton.style.height = "40px";
+      moveButton.style.width = "35px";
+      moveButton.style.cursor = "pointer";
+      link.appendChild(moveButton);
 
-        moveButton.onclick = (e) => {
-          e.stopPropagation();
-          const thingy = prompt(
-            "Enter folder name to place into (in the current directory)"
-          );
-          if (thingy) {
-            if (
-              historyLocationToDisplay.some(
-                (item) => item.title === thingy && item.items
-              )
-            ) {
-              historyLocationToDisplay = historyLocationToDisplay.filter(
-                (item) => item.title !== thingy
-              );
-              historyLocationToDisplay[
-                historyLocationToDisplay.indexOf(
-                  historyLocationToDisplay.find(
-                    (item) => item.title === thingy && item.items
-                  )
+      moveButton.onclick = (e) => {
+        e.stopPropagation();
+        const thingy = prompt(
+          'Enter folder name to place into (in the current directory, enter ".." to move a folder back)'
+        );
+        if (thingy) {
+          if (
+            historyLocationToDisplay.some(
+              (item) => item.title === thingy && item.items
+            ) || thingy === ".."
+          ) {
+            const tempPos = pos ?? [];
+            historyLocationToDisplay.splice(index, 1);
+
+            if (thingy !== "..")
+              tempPos.push(
+                historyLocationToDisplay.findIndex(
+                  (item) => item.title === thingy && item.items
                 )
-              ].items.push({ title: thingy, link: [url] });
-              chrome.runtime.sendMessage({
-                action: "saveSettings",
-                settings: { ...data, history: historyLocationToDisplay },
-              });
-              link.remove();
+              );
+            else {
+              if (tempPos.length < 1) {
+                alert("You are already at the root directory");
+                return;
+              }
+              tempPos.pop();
             }
+            setDeepValue(historyLocationToDisplay, tempPos, {
+              link: url.link,
+              title: url.title,
+            });
+            chrome.runtime.sendMessage({
+              action: "saveSettings",
+              settings: { ...data, history: historyLocationToDisplay },
+            });
+            link.remove();
+          } else {
+            alert("Folder does not exist");
           }
-        };
-      }
+        } else {
+          alert("Please enter a folder name");
+        }
+      };
+      // }
 
       deleteButton.onclick = (e) => {
         e.stopPropagation();
 
-        const deleteCondition = (item) => {
-          if (item.link)
-            return item.link !== url.link && item.title !== url.title;
-          else {
-            return { ...item, items: item.items.filter(deleteCondition) };
-          }
-        };
+        // const deleteCondition = (item) => {
+        //   if (item.link)
+        //     return item.link !== url.link && item.title !== url.title;
+        //   else {
+        //     return { ...item, items: item.items.filter(deleteCondition) };
+        //   }
+        // };
 
-        const newHistory = history.filter(deleteCondition);
-        chrome.runtime.sendMessage({
-          action: "log",
-          log: newHistory,
-        });
+        historyLocationToDisplay.splice(index, 1);
         chrome.runtime.sendMessage({
           action: "saveSettings",
-          settings: { ...data, history: newHistory },
+          settings: { ...data, history },
         });
         link.remove();
       };
