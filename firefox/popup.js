@@ -124,6 +124,29 @@ function mainPage(shouldDisplayHistory = true, pos = null) {
       });
     }
   };
+
+  if (pos) {
+    const backButton = document.createElement("button");
+    backButton.innerText = "Back";
+    backButton.style.width = "45%";
+    backButton.style.borderRadius = "10px";
+    backButton.style.fontFamily = "Roboto, sans-serif";
+    backButton.style.fontWeight = "bold";
+    backButton.style.height = "30px";
+    backButton.style.position = "relative";
+    backButton.style.bottom = "-23px";
+    backButton.style.left = "50%";
+    backButton.style.transform = "translateX(-50%)";
+    backButton.style.backgroundColor = "#F7DC6F";
+    backButton.style.border = "2px solid #F1C40F";
+    backButton.style.cursor = "pointer";
+    backButton.onclick = () => {
+      clearPage();
+      mainPage(false, pos.slice(0, -1));
+      displayHistory(pos.slice(0, -1));
+    };
+    document.body.appendChild(backButton);
+  }
 }
 
 function setDeepValue(obj, path, value) {
@@ -132,7 +155,8 @@ function setDeepValue(obj, path, value) {
     if (i != 0) current = current.items[path[i]];
     else current = current[path[i]];
   }
-  current.items.push(value);
+  if (current.items) current.items.push(value);
+  else current.push(value);
 }
 
 function displayHistory(pos = null) {
@@ -141,6 +165,7 @@ function displayHistory(pos = null) {
     // [3,5,7,1]
     let historyLocationToDisplay = history;
     if (pos !== null) {
+      console.log(pos);
       pos.forEach(
         (item) =>
           (historyLocationToDisplay = historyLocationToDisplay[item].items)
@@ -198,22 +223,28 @@ function displayHistory(pos = null) {
 
       moveButton.onclick = (e) => {
         e.stopPropagation();
-        const thingy = prompt(
+        const response = prompt(
           'Enter folder name to place into (in the current directory, enter ".." to move a folder back)'
         );
-        if (thingy) {
+        if (response) {
           if (
             historyLocationToDisplay.some(
-              (item) => item.title === thingy && item.items
-            ) || thingy === ".."
+              (item) => item.title === response && item.items
+            ) ||
+            response === ".."
           ) {
             const tempPos = pos ?? [];
-            historyLocationToDisplay.splice(index, 1);
+            historyLocationToDisplay.splice(
+              historyLocationToDisplay.findIndex(
+                (item) => item.title === url.title
+              ),
+              1
+            );
 
-            if (thingy !== "..")
+            if (response !== "..")
               tempPos.push(
                 historyLocationToDisplay.findIndex(
-                  (item) => item.title === thingy && item.items
+                  (item) => item.title === response && item.items
                 )
               );
             else {
@@ -223,13 +254,15 @@ function displayHistory(pos = null) {
               }
               tempPos.pop();
             }
-            setDeepValue(historyLocationToDisplay, tempPos, {
-              link: url.link,
-              title: url.title,
-            });
+            if (tempPos.length > 0)
+              setDeepValue(history, tempPos, {
+                link: url.link,
+                title: url.title,
+              });
+            else history.push({ link: url.link, title: url.title });
             chrome.runtime.sendMessage({
               action: "saveSettings",
-              settings: { ...data, history: historyLocationToDisplay },
+              settings: { ...data, history },
             });
             link.remove();
           } else {
@@ -266,15 +299,22 @@ function displayHistory(pos = null) {
       document.body.appendChild(link);
 
       link.onclick = () => {
-        if (url.link) {
-          window.open(url.link, "_blank");
-        } else {
-          if (!pos) pos = [];
-          pos.push(index);
-          clearPage();
-          mainPage(false, pos);
-          displayHistory(pos);
-        }
+        chrome.runtime.sendMessage({ action: "getSettings" }).then((data) => {
+          let history = data.history ?? [];
+          if (pos !== null) {
+            console.log(pos);
+            pos.forEach((item) => (history = history[item].items));
+          }
+          if (url.link) {
+            window.open(url.link, "_blank");
+          } else {
+            if (!pos) pos = [];
+            pos.push(history.findIndex((item) => item.title === url.title));
+            clearPage();
+            mainPage(false, pos);
+            displayHistory(pos);
+          }
+        });
       };
     });
   });
