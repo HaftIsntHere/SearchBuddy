@@ -1,4 +1,4 @@
-function mainPage() {
+function mainPage(shouldDisplayHistory = true, pos = null) {
   clearPage();
   // document.createElement("h1").innerText = "Search Buddy"
   const title = document.createElement("h1");
@@ -8,6 +8,7 @@ function mainPage() {
 
   const toggleButton = document.createElement("button");
   const settingsButton = document.createElement("button");
+  const createFolder = document.createElement("button");
 
   chrome.runtime.sendMessage({ action: "getSettings" }).then((data) => {
     const state = data.settings.state ?? true;
@@ -21,68 +22,35 @@ function mainPage() {
       toggleButton.style.backgroundColor = "#B2FFD6";
       toggleButton.style.border = "2px solid #689F38";
     }
-
-    const history = data.history ?? [];
-
-    history.forEach((url) => {
-      const link = document.createElement("button");
-      // link.href = url.link;
-      link.target = "_blank";
-      link.innerText = url.title;
-      link.style.position = "relative";
-      link.style.left = "42%";
-      link.style.marginTop = "10px";
-      link.style.backgroundColor = "#c5dbe6";
-      link.style.border = "2px solid #45a";
-      link.style.borderRadius = "10px";
-      link.style.height = "40px";
-      link.style.width = "80%";
-      link.style.overflowWrap = "break-word";
-
-      const deleteButton = document.createElement("button");
-      deleteButton.style.position = "absolute";
-      deleteButton.style.right = "-40px";
-      deleteButton.style.top = "0px";
-      deleteButton.innerText = "X";
-      deleteButton.style.backgroundColor = "#EC7694";
-      deleteButton.style.border = "none";
-      deleteButton.style.borderRadius = "10px";
-      deleteButton.style.height = "40px";
-      deleteButton.style.width = "30px";
-      deleteButton.style.cursor = "pointer";
-      link.appendChild(deleteButton);
-
-      deleteButton.onclick = (e) => {
-        e.stopPropagation();
-        const newHistory = history.filter(
-          (item) => item.link !== url.link && item.title !== url.title
-        );
-        chrome.runtime.sendMessage({
-          action: "saveSettings",
-          settings: { ...data, history: newHistory },
-        });
-        link.remove();
-      };
-
-      // link.style.fontSizeAdjust = "0.3"
-      link.style.transform = "translateX(-50%)";
-      link.style.cursor = "pointer";
-      document.body.appendChild(link);
-
-      link.onclick = () => {
-        chrome.tabs.create({ url: url.link });
-      };
-    });
   });
-  toggleButton.style.width = "50%";
+
+  if (shouldDisplayHistory) displayHistory();
+
+  toggleButton.style.width = "45%";
   toggleButton.style.borderRadius = "10px";
   toggleButton.style.fontFamily = "Roboto, sans-serif";
   toggleButton.style.fontWeight = "bold";
   toggleButton.style.height = "30px";
   toggleButton.style.position = "relative";
-  toggleButton.style.bottom = "10px";
-  toggleButton.style.left = "25%";
+  toggleButton.style.bottom = "-20px";
+  toggleButton.style.left = "5%";
+  toggleButton.style.cursor = "pointer";
   document.body.appendChild(toggleButton);
+
+  createFolder.style.width = "45%";
+  createFolder.style.borderRadius = "10px";
+  createFolder.style.fontFamily = "Roboto, sans-serif";
+  createFolder.style.fontWeight = "bold";
+  createFolder.style.height = "30px";
+  createFolder.style.position = "relative";
+  createFolder.style.bottom = "-20px";
+  createFolder.style.left = "0%";
+  createFolder.style.cursor = "pointer";
+  document.body.appendChild(createFolder);
+
+  createFolder.innerText = "Create Folder";
+  createFolder.style.backgroundColor = "#F7DC6F";
+  createFolder.style.border = "2px solid #F1C40F";
 
   settingsButton.style.background = "none";
   settingsButton.style.border = "none";
@@ -129,6 +97,174 @@ function mainPage() {
   settingsButton.onclick = () => {
     settingsPage();
   };
+
+  createFolder.onclick = () => {
+    const folderName = prompt("Enter folder name:");
+    if (folderName) {
+      chrome.runtime.sendMessage({ action: "getSettings" }).then((data) => {
+        const history = data.history ?? [];
+        if (pos) {
+          console.log(pos);
+          console.log(history);
+          setDeepValue(history, pos, { title: folderName, items: [] });
+        }
+        chrome.runtime.sendMessage({
+          action: "saveSettings",
+          settings: {
+            ...data,
+            history,
+          },
+        });
+        clearPage();
+        mainPage(false, pos);
+        displayHistory(pos);
+      });
+    }
+
+    function setDeepValue(obj, path, value) {
+      let current = obj;
+      for (let i = 0; i <= path.length - 1; i++) {
+        if (i != 0) current = current.items[path[i]];
+        else current = current[path[i]];
+      }
+      current.items.push(value);
+    }
+  };
+}
+
+function displayHistory(pos = null) {
+  chrome.runtime.sendMessage({ action: "getSettings" }).then((data) => {
+    const history = data.history ?? [];
+    // [3,5,7,1]
+    let historyLocationToDisplay = history;
+    if (pos !== null) {
+      pos.forEach(
+        (item) =>
+          (historyLocationToDisplay = historyLocationToDisplay[item].items)
+      );
+    }
+
+    historyLocationToDisplay.forEach((url, index) => {
+      const link = document.createElement("button");
+      // [{"link":"https://en.wikipedia.org/wiki/E_(mathematical_constant)","title":"e (mathematical constant)\nWikipedia\n"},{items: [{link: "https://google.com", title: "Google"}], title: "Test Folder"}]
+      // link.href = url.link;
+      // link.target = "_blank";
+      link.innerText = url.title;
+      link.style.position = "relative";
+      link.style.left = "32%";
+      link.style.top = "15px";
+      link.style.marginTop = "10px";
+      if (url.link) link.style.backgroundColor = "#c5dbe6";
+      else link.style.backgroundColor = "#F7DC6F";
+      link.style.border = "2px solid #45a";
+      link.style.borderRadius = "10px";
+      link.style.height = "40px";
+      link.style.width = "60%";
+      link.style.overflowWrap = "break-word";
+
+      if (url.link) {
+        link.target = "_blank";
+      }
+
+      const deleteButton = document.createElement("button");
+      deleteButton.style.position = "absolute";
+      deleteButton.style.right = "-90px";
+      deleteButton.style.top = "0px";
+      deleteButton.innerText = "X";
+      deleteButton.style.backgroundColor = "#EC7694";
+      deleteButton.style.border = "none";
+      deleteButton.style.borderRadius = "10px";
+      deleteButton.style.height = "40px";
+      deleteButton.style.width = "35px";
+      deleteButton.style.cursor = "pointer";
+      link.appendChild(deleteButton);
+
+      if (url.link) {
+        const moveButton = document.createElement("button");
+        moveButton.style.position = "absolute";
+        moveButton.style.right = "-45px";
+        moveButton.style.top = "0px";
+        moveButton.innerText = ">>";
+        moveButton.style.backgroundColor = "#F7DC6F";
+        moveButton.style.border = "none";
+        moveButton.style.borderRadius = "10px";
+        moveButton.style.height = "40px";
+        moveButton.style.width = "35px";
+        moveButton.style.cursor = "pointer";
+        link.appendChild(moveButton);
+
+        moveButton.onclick = (e) => {
+          e.stopPropagation();
+          const thingy = prompt(
+            "Enter folder name to place into (in the current directory)"
+          );
+          if (thingy) {
+            if (
+              historyLocationToDisplay.some(
+                (item) => item.title === thingy && item.items
+              )
+            ) {
+              historyLocationToDisplay = historyLocationToDisplay.filter(
+                (item) => item.title !== thingy
+              );
+              historyLocationToDisplay[
+                historyLocationToDisplay.indexOf(
+                  historyLocationToDisplay.find(
+                    (item) => item.title === thingy && item.items
+                  )
+                )
+              ].items.push({ title: thingy, link: [url] });
+              chrome.runtime.sendMessage({
+                action: "saveSettings",
+                settings: { ...data, history: historyLocationToDisplay },
+              });
+              link.remove();
+            }
+          }
+        };
+      }
+
+      deleteButton.onclick = (e) => {
+        e.stopPropagation();
+
+        const deleteCondition = (item) => {
+          if (item.link)
+            return item.link !== url.link && item.title !== url.title;
+          else {
+            return { ...item, items: item.items.filter(deleteCondition) };
+          }
+        };
+
+        const newHistory = history.filter(deleteCondition);
+        chrome.runtime.sendMessage({
+          action: "log",
+          log: newHistory,
+        });
+        chrome.runtime.sendMessage({
+          action: "saveSettings",
+          settings: { ...data, history: newHistory },
+        });
+        link.remove();
+      };
+
+      // link.style.fontSizeAdjust = "0.3"
+      link.style.transform = "translateX(-50%)";
+      link.style.cursor = "pointer";
+      document.body.appendChild(link);
+
+      link.onclick = () => {
+        if (url.link) {
+          window.open(url.link, "_blank");
+        } else {
+          if (!pos) pos = [];
+          pos.push(index);
+          clearPage();
+          mainPage(false, pos);
+          displayHistory(pos);
+        }
+      };
+    });
+  });
 }
 
 function settingsPage() {
