@@ -109,7 +109,7 @@ function mainPage(shouldDisplayHistory = true, pos = null) {
           console.log(history);
           setDeepValue(history, pos, { title: folderName, items: [] });
         } else {
-          history.push({ title: folderName, items: [] });
+          history.unshift({ title: folderName, items: [] });
         }
         chrome.runtime.sendMessage({
           action: "saveSettings",
@@ -156,7 +156,7 @@ function setDeepValue(obj, path, value) {
     else current = current[path[i]];
   }
   if (current.items) current.items.push(value);
-  else current.push(value);
+  else current.unshift(value);  
 }
 
 function displayHistory(pos = null) {
@@ -265,7 +265,7 @@ function displayHistory(pos = null) {
                   items: url.items,
                   title: url.title,
                 });
-            else history.push({ link: url.link, title: url.title });
+            else history.unshift({ link: url.link, title: url.title });
             chrome.runtime.sendMessage({
               action: "saveSettings",
               settings: { ...data, history },
