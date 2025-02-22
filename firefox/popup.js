@@ -233,7 +233,7 @@ function displayHistory(pos = null) {
             ) ||
             response === ".."
           ) {
-            const tempPos = JSON.parse(JSON.stringify(pos ?? [])) // to make sure pos wont be modified  
+            const tempPos = JSON.parse(JSON.stringify(pos ?? [])); // to make sure pos wont be modified
             historyLocationToDisplay.splice(
               historyLocationToDisplay.findIndex(
                 (item) => item.title === url.title
@@ -255,10 +255,16 @@ function displayHistory(pos = null) {
               tempPos.pop();
             }
             if (tempPos.length > 0)
-              setDeepValue(history, tempPos, {
-                link: url.link,
-                title: url.title,
-              });
+              if (url.link)
+                setDeepValue(history, tempPos, {
+                  link: url.link,
+                  title: url.title,
+                });
+              else
+                setDeepValue(history, tempPos, {
+                  items: url.items,
+                  title: url.title,
+                });
             else history.push({ link: url.link, title: url.title });
             chrome.runtime.sendMessage({
               action: "saveSettings",
@@ -359,42 +365,66 @@ function settingsPage() {
     offsetInputHeight.value = data.settings.offsetH;
 
     offsetInputX.onchange = () => {
-      chrome.runtime.sendMessage({
-        action: "saveSettings",
-        settings: {
-          ...data,
-          settings: { ...data.settings, offsetX: offsetInputX.value },
-        },
-      });
+      chrome.runtime
+        .sendMessage({
+          action: "getSettings",
+        })
+        .then((data) => {
+          data.settings.offsetX = offsetInputX.value;
+          chrome.runtime.sendMessage({
+            action: "saveSettings",
+            settings: {
+              ...data,
+            },
+          });
+        });
     };
     offsetInputY.onchange = () => {
-      chrome.runtime.sendMessage({
-        action: "saveSettings",
-        settings: {
-          ...data,
-          settings: { ...data.settings, offsetY: offsetInputY.value },
-        },
-      });
+      chrome.runtime
+        .sendMessage({
+          action: "getSettings",
+        })
+        .then((data) => {
+          data.settings.offsetY = offsetInputY.value;
+          chrome.runtime.sendMessage({
+            action: "saveSettings",
+            settings: {
+              ...data,
+            },
+          });
+        });
     };
 
     offsetInputWidth.onchange = () => {
-      chrome.runtime.sendMessage({
-        action: "saveSettings",
-        settings: {
-          ...data,
-          settings: { ...data.settings, offsetW: offsetInputWidth.value },
-        },
-      });
+      chrome.runtime
+        .sendMessage({
+          action: "getSettings",
+        })
+        .then((data) => {
+          data.settings.offsetW = offsetInputWidth.value;
+          chrome.runtime.sendMessage({
+            action: "saveSettings",
+            settings: {
+              ...data,
+            },
+          });
+        });
     };
 
     offsetInputHeight.onchange = () => {
-      chrome.runtime.sendMessage({
-        action: "saveSettings",
-        settings: {
-          ...data,
-          settings: { ...data.settings, offsetH: offsetInputHeight.value },
-        },
-      });
+      chrome.runtime
+        .sendMessage({
+          action: "getSettings",
+        })
+        .then((data) => {
+          data.settings.offsetH = offsetInputHeight.value;
+          chrome.runtime.sendMessage({
+            action: "saveSettings",
+            settings: {
+              ...data,
+            },
+          });
+        });
     };
   });
   const p = document.createElement("p");
