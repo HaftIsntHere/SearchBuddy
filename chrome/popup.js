@@ -125,7 +125,7 @@ function mainPage(shouldDisplayHistory = true, pos = null) {
     }
   };
 
-  if (pos) {
+  if (pos && pos.length > 0) {
     const backButton = document.createElement("button");
     backButton.innerText = "Back";
     backButton.style.width = "45%";
