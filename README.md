@@ -25,7 +25,7 @@ An extension that enhances your search experience by providing instant previews 
 ### Firefox (Includes Firefox based)
 
 - Loading developer extensions is temporary and hence we will not be doing it.
-= You can still do it but I don't recommend doing so.
-- The extension is already undeer review in the Firefox addons store! By tomorrow you will be able to install it officially.
+- You can still do it but I don't recommend doing so.
+- The extension is already under review in the Firefox addons store! By tomorrow you will be able to install it officially.
 
 <sub>made for [HackClub](https://hackclub.com) [BrowserBuddy](https://browserbuddy.hackclub.com) event</sub>
