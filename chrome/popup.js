@@ -233,7 +233,7 @@ function displayHistory(pos = null) {
             ) ||
             response === ".."
           ) {
-            const tempPos = pos ?? [];
+            const tempPos = JSON.parse(JSON.stringify(pos ?? [])) // to make sure pos wont be modified  
             historyLocationToDisplay.splice(
               historyLocationToDisplay.findIndex(
                 (item) => item.title === url.title
