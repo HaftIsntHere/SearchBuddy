@@ -22,10 +22,10 @@ An extension that enhances your search experience by providing instant previews 
 - Click the `Load unpacked` button the top left
 - Navigate to the extracted folder, and select the `chrome` folder
 
+**extension is being verified for the chrome webstore and will be officially available in the next few days**
+
 ### Firefox (Includes Firefox based)
 
-- Loading developer extensions is temporary and hence we will not be doing it.
-- You can still do it but I don't recommend doing so.
-- The extension is already under review in the Firefox addons store! By tomorrow you will be able to install it officially.
+Available on https://addons.mozilla.org/en-US/firefox/addon/search-buddy/
 
-<sub>made for [HackClub](https://hackclub.com) [BrowserBuddy](https://browserbuddy.hackclub.com) event</sub>
+<sub>made for [HackClub's](https://hackclub.com) [BrowserBuddy](https://browserbuddy.hackclub.com) event</sub>
