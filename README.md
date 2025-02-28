@@ -17,12 +17,7 @@ An extension that enhances your search experience by providing instant previews 
 
 ### Chrome (Includes chromium based)
 
-- Go to `chrome://extensions/`
-- Enable `developer mode` at the top right
-- Click the `Load unpacked` button the top left
-- Navigate to the extracted folder, and select the `chrome` folder
-
-> **extension is being verified for the chrome webstore and will be officially available in the next few days**
+- Available on https://chromewebstore.google.com/detail/search-buddy/fopiejbolebmgiaemachfpjfnjocdlkl
 
 ### Firefox (Includes Firefox based)
 
